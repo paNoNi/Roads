@@ -1,7 +1,7 @@
 from mmcv import Config
 from mmcv.parallel import MMDistributedDataParallel
 
-cfg = Config.fromfile('../../../../Users/Nitcu/PycharmProjects/SafeRoads/saferoads/data/config.py')
+cfg = Config.fromfile('config.py')
 
 from mmseg.datasets import build_dataset
 from mmseg.models import build_segmentor
@@ -21,5 +21,4 @@ if __name__ == '__main__':
     model = MMDistributedDataParallel(model)
     # Create work_dir
     mmcv.mkdir_or_exist(os.path.abspath(cfg.work_dir))
-    train_segmentor(model, datasets, cfg, distributed=False, validate=True,
-                    meta=dict())
+    train_segmentor(model, datasets, cfg, distributed=False, validate=True, meta=dict())
