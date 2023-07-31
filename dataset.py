@@ -1,6 +1,9 @@
+import copy
 import random
 import re
+from copy import deepcopy
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
@@ -50,7 +53,7 @@ class BaseDataset(Dataset):
     def __init__(self,
                  ignore_label=255,
                  base_size=2048,
-                 crop_size=(512, 512),
+                 crop_size=(1024, 1024),
                  scale_factor=16,
                  mean=[0.485, 0.456, 0.406],
                  std=[0.229, 0.224, 0.225]):
@@ -180,6 +183,7 @@ class BaseDataset(Dataset):
         return pred.exp()
 
 
+
 class CarlaDataset(BaseDataset):
     def __init__(self, wp_root, waypoint_size=None, real_cam='rgb', annotation_cam='seg', color_annotation=False,
                  random_state=42):
@@ -230,7 +234,7 @@ class CarlaDataset(BaseDataset):
 
         self.label_mapping = {0: 1, 1: 2, 2: 3,
                               3: 4, 4: 5, 5: 6,
-                              6: 7, 7: 8, 8: 9,
+                              6: 7, 7: 7, 8: 9,
                               9: 10, 10: 11, 11: 12,
                               12: 13, 13: 14, 14: 15,
                               15: 16, 16: 17, 17: 18,
@@ -238,8 +242,8 @@ class CarlaDataset(BaseDataset):
                               21: 22, 22: 23}
 
     def __iter__(self):
-        self.image_idx = 0
-        return self
+        for i in range(len(self.image_list)):
+            yield self.__getitem__(idx=0)
 
     def __next__(self):
         if self.image_idx >= len(self.image_list):
@@ -250,6 +254,16 @@ class CarlaDataset(BaseDataset):
         self.image_idx += 1
 
         return img, label
+
+    def split_trainval(self, part: float = 0.8):
+        train_count = int(len(self.image_list) * part)
+        shuffled_list = copy.copy(self.image_list)
+        random.shuffle(shuffled_list)
+        train_idxs, val_idxs = shuffled_list[:train_count], shuffled_list[train_count:]
+        train_data, val_data = deepcopy(self), deepcopy(self)
+        train_data.image_list = train_idxs
+        val_data.image_list = val_idxs
+        return train_data, val_data
 
     def convert_label(self, label, inverse=False):
         temp = label.copy()

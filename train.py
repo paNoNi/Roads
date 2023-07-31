@@ -2,7 +2,7 @@ import os
 from tqdm import tqdm
 from PIDNet.utils.function import train, validate
 import torch.backends.cudnn as cudnn
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from PIDNet.utils.utils import FullModel
 from PIDNet.utils.criterion import BondaryLoss, OhemCrossEntropy, CrossEntropy
 from PIDNet.models.pidnet import get_pred_model, get_seg_model
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=True)
     model = get_seg_model(model_name='test',
-                          path_to_pretrained='checkpoints/best.pt',
+                          path_to_pretrained='yolo/best.pt',
                           num_classes=23, imgnet_pretrained=True)
 
     device = torch.device('cuda')
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     bd_criterion = BondaryLoss()
     model = FullModel(model, sem_criterion, bd_criterion).to(device)
-    optimizer = SGD(model.parameters(), lr=0.005)
+    optimizer = Adam(model.parameters(), lr=0.005)
 
     EPOCHS = 200
     epoch_iters = len(train_dataloader)
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     for epoch in range(EPOCHS):
         train(epoch=epoch + 1, num_epoch=EPOCHS, epoch_iters=len(train_dataloader), base_lr=0.01, num_iters=num_iters,
               trainloader=train_dataloader, optimizer=optimizer, model=model)
-        valid_loss, mean_IoU, IoU_array = validate(test_dataloader, model)
+        valid_loss, mean_IoU = validate(test_dataloader, model)
 
         if mean_IoU > best_mIoU:
             best_mIoU = mean_IoU
